@@ -35,8 +35,10 @@ def create_product(
     new_product = Product(
         key=product.key,
         name=product.name,
-        price=product.price,
-        stock=product.stock
+        brand=product.brand,
+        key_type=product.key_type,
+        spaces=product.spaces,
+        depths=product.depths,
     )
 
     db.add(new_product)
@@ -58,7 +60,7 @@ def create_product(
     )
 
 
-@router.get("/products/{key}")
+@router.get("/product/{key}")
 def get_product(
     key: str,
     db: Session = Depends(get_db),
@@ -79,8 +81,33 @@ def get_product(
         data={
             "key": product.key,
             "name": product.name,
-            "price": product.price,
-            "stock": product.stock
+            "brand": product.brand,
+            "key_type": product.key_type,
+            "spaces": product.spaces,
+            "depths": product.depths
         },
         message="Producto encontrado"
     )
+
+@router.get("/products/all")
+def get_all_products(
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    products = db.query(Product).all()
+
+    return success(
+        data=[
+            {
+                "key": product.key,
+                "name": product.name,
+                "brand": product.brand,
+                "key_type": product.key_type,
+                "spaces": product.spaces,
+                "depths": product.depths
+            }
+            for product in products
+        ],
+        message="Productos encontrados",
+    )
+    

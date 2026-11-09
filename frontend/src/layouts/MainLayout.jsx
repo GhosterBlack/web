@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 export default function MainLayout({children}) {
     const navigate = useNavigate();
     function homeOnClick() {
-        navigate("/home")
+        navigate("/dashboard")
     }
 
     return (

@@ -120,3 +120,25 @@ main {
     font-weight: bolder;
     cursor: pointer;
 }
+
+.ghost {
+    position: fixed;
+    top: 20vh;
+    width: 70vw;
+    left: 15vw;
+    height: 60vh;
+    overflow-y: scroll;
+}
+
+.list {
+    display: flex;
+    justify-content: start;
+}
+
+.list span {
+    width: max-content;
+}
+
+ul, ol {
+    margin: 20px;
+}

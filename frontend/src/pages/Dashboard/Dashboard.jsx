@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getUser } from "../../utils/auth";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "../../layouts/MainLayout";
+import { getAllProducts, createProduct } from "../../services/productService";
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -14,29 +15,69 @@ export default function Dashboard() {
     const [form, setForm] = useState(emptyForm);
     const [saving, setSaving] = useState(false);
 
-    const productsUrl = `${import.meta.env.VITE_API_URL || ""}/api/products`;
+    const [spaces, setSpaces] = useState([]);
+    const [depths, setDepths] = useState([]);
+
+    function setNumSpaces(number) {
+        setSpaces(prevSpaces => {
+            const newSpaces = [...prevSpaces];
+
+            for (let i = 0; i < number; i++) {
+                if (newSpaces[i] === undefined) {
+                    newSpaces[i] = 1;
+                }
+            }
+
+            return newSpaces.slice(0, number);
+        });
+    }
+
+    function editarEspacio(index, value) {
+        setSpaces(prevSpaces => prevSpaces.map((space, currentIndex) =>
+            currentIndex === index ? Number(value) : space
+        ));
+    }
+
+
+    function setNumDepths(number) {
+        setDepths(prevDepths => {
+            const newDepths = [...prevDepths];
+
+            for (let i = 0; i < number; i++) {
+                if (newDepths[i] === undefined) {
+                    newDepths[i] = 1;
+                }
+            }
+
+            return newDepths.slice(0, number);
+        });
+    }
+
+    function editarProfundidad(index, value) {
+        setDepths(prevDepths => prevDepths.map((depth, currentIndex) =>
+            currentIndex === index ? Number(value) : depth
+        ));
+    }
 
     useEffect(() => {
         if (user == null) {
             navigate("/");
             return;
         }
-
         const loadProducts = async () => {
             try {
-                const response = await fetch(productsUrl);
-                if (!response.ok) throw new Error("No se pudieron cargar los productos.");
-                const data = await response.json();
-                setProducts(Array.isArray(data) ? data : data.products || data.data || []);
+                const data = await getAllProducts();
+                setProducts(data.data || []);
             } catch (err) {
-                setError(err.message || "Ocurrió un error al cargar los productos.");
+                console.log(err)
+                setError(err || "Ocurrió un error al cargar los productos.");
             } finally {
                 setLoading(false);
             }
         };
 
         loadProducts();
-    }, [navigate, user, productsUrl]);
+    }, []);
 
     const handleCreate = async (event) => {
         event.preventDefault();
@@ -48,23 +89,22 @@ export default function Dashboard() {
                 name: form.name,
                 brand: form.brand,
                 key_type: form.key_type,
-                spaces: JSON.parse(form.spaces),
-                depths: JSON.parse(form.depths),
+                spaces: spaces,
+                depths: depths,
             };
             if (!Array.isArray(productData.spaces) || !Array.isArray(productData.depths)) {
                 throw new Error("Espacios y profundidades deben ser arreglos JSON.");
             }
 
-            const response = await fetch(productsUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(productData),
-            });
-            if (!response.ok) throw new Error("No se pudo crear el producto.");
-            const product = await response.json();
-            setProducts((current) => [...current, product]);
-            setForm(emptyForm);
-            setShowForm(false);
+            productData.spaces = JSON.stringify(productData.spaces);
+            productData.depths = JSON.stringify(productData.depths);
+
+            productData.id = await createProduct(productData).id;
+            if (productData.id) {
+                setProducts((current) => [...current, productData]);
+                setForm(emptyForm);
+                setShowForm(false);
+            }
         } catch (err) {
             setError(err.message || "Ocurrió un error al crear el producto.");
         } finally {
@@ -76,15 +116,19 @@ export default function Dashboard() {
         return null;
     }
 
+
+
     return (
         <MainLayout>
             <h2>Productos</h2>
-            <button type="button" onClick={() => setShowForm((visible) => !visible)}>
-                {showForm ? "Cancelar" : "Crear producto"}
-            </button>
+            {user.role == "editor" && (
+                <button type="button" onClick={() => setShowForm((visible) => !visible)}>
+                    {showForm ? "Cancelar" : "Crear producto"}
+                </button>
+            )}
 
-            {showForm && (
-                <form onSubmit={handleCreate}>
+            {(showForm && user.role=="editor") && (
+                <form className="card ghost" onSubmit={handleCreate}>
                     <label>
                         Clave
                         <input required value={form.key} onChange={(event) => setForm({ ...form, key: event.target.value })} />
@@ -102,13 +146,36 @@ export default function Dashboard() {
                         <input required value={form.key_type} onChange={(event) => setForm({ ...form, key_type: event.target.value })} />
                     </label>
                     <label>
-                        Espacios (arreglo JSON)
-                        <textarea required value={form.spaces} onChange={(event) => setForm({ ...form, spaces: event.target.value })} placeholder='[1, 2, 3]' />
-                    </label>
+                        Espacios
+                        <input
+                            type="number"
+                            onChange={(event) =>
+                                setNumSpaces(parseInt(event.target.value, 10) || 0)
+                            }
+                        />
+                        {spaces.map((v, index) => (
+                            <div className="list" key={index}>
+                                <span>
+                                    {index + 1} ::
+                                </span>
+                                <input type="number" value={v} onChange={(event) => editarEspacio(index, event.target.value)} />
+                            </div>
+                        ))}
+                    </label> <br />
                     <label>
-                        Profundidades (arreglo JSON)
-                        <textarea required value={form.depths} onChange={(event) => setForm({ ...form, depths: event.target.value })} placeholder='[1, 2, 3]' />
+                        Profundidades
+                        <input type="number"
+                            onChange={(event) =>
+                                setNumDepths(parseInt(event.target.value, 10) || 0)
+                            } />
+                        {depths.map((v, index) => (
+                            <div className="list" key={index}>
+                                <span>{index + 1} ::</span>
+                                <input type="number" value={v} onChange={(event) => editarProfundidad(index, event.target.value)} />
+                            </div>
+                        ))}
                     </label>
+                    <br /> <br />
                     <button type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar producto"}</button>
                 </form>
             )}
@@ -121,13 +188,20 @@ export default function Dashboard() {
             ) : (
                 <ul>
                     {products.map((product, index) => (
-                        <li key={product.id ?? index}>
+                        <li className="card" key={product.id ?? index}>
                             <h3>{product.name ?? "Producto"}</h3>
                             {product.key != null && <p>Clave: {product.key}</p>}
                             {product.brand != null && <p>Marca: {product.brand}</p>}
                             {product.key_type != null && <p>Tipo de llave: {product.key_type}</p>}
-                            {product.spaces != null && <p>Espacios: {JSON.stringify(product.spaces)}</p>}
-                            {product.depths != null && <p>Profundidades: {JSON.stringify(product.depths)}</p>}
+                            {product.spaces != null && <div>Espacios: <ol> 
+                                {JSON.parse(product.spaces).map((space) => <li> {space} </li>)}
+                                </ol>
+                            </div>
+                            }
+                            {product.depths != null && <div>Profundidades: <ol>
+                                {JSON.parse(product.depths).map(depth => <li> {depth} </li>)}    
+                                </ol>
+                            </div>}
                         </li>
                     ))}
                 </ul>

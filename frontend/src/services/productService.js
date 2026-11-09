@@ -4,11 +4,18 @@ export const getProduct = async(key)=>{
 
     const response =
         await api.get(
-            `/products/${key}`
+            `/product/${key}`
         );
 
     return response.data;
 };
+
+export const getAllProducts = async()=> {
+    const response = 
+        await api.get("/products/all");
+       
+    return response.data;
+}
 
 export const createProduct = async(data)=>{
 
@@ -17,6 +24,8 @@ export const createProduct = async(data)=>{
             "/products",
             data
         );
-
+         if (!response.success) {
+            throw response.message;
+        }
     return response.data;
 };

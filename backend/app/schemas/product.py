@@ -4,5 +4,7 @@ class ProductCreate(BaseModel):
 
     key: str
     name: str
-    price: float
-    stock: int
+    brand: str
+    key_type: str
+    spaces: str
+    depths: str
