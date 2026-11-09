@@ -1,0 +1,10 @@
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --background: #f8fafc;
+    --card: #ffffff;
+    --text: #1e293b;
+    --border: #cbd5e1;
+    --footer-color: #4f4f4f;
+    --radius: 10px;
+}

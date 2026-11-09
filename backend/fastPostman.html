@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Prueba API Productos</title>
+    <!-- Este documento fue creado con IA y este mensaje lo coloco el autor de este proyecto -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        pre {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow: auto;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <h1>Prueba FastAPI</h1>
+
+    <h2>Crear producto</h2>
+
+    <input id="key" placeholder="key">
+    <input id="name" placeholder="nombre">
+    <input id="price" type="number" placeholder="precio">
+    <input id="stock" type="number" placeholder="stock">
+
+    <button onclick="crearProducto()">
+        Guardar
+    </button>
+
+    <hr>
+
+    <h2>Buscar producto</h2>
+
+    <input id="buscarKey" placeholder="key">
+
+    <button onclick="buscarProducto()">
+        Buscar
+    </button>
+
+    <hr>
+
+    <h2>Respuesta</h2>
+
+    <pre id="resultado"></pre>
+
+    <script>
+
+        const API_URL = "http://127.0.0.1:8000";
+
+        function getToken() {
+            return localStorage.getItem("token");
+        }
+
+        async function crearProducto() {
+
+            const token = getToken();
+
+            const producto = {
+                key: document.getElementById("key").value,
+                name: document.getElementById("name").value,
+                price: Number(
+                    document.getElementById("price").value
+                ),
+                stock: Number(
+                    document.getElementById("stock").value
+                )
+            };
+
+            const response = await fetch(
+                `${API_URL}/products`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(producto)
+                }
+            );
+
+            const data = await response.json();
+
+            document.getElementById("resultado")
+                .textContent = JSON.stringify(
+                    data,
+                    null,
+                    4
+                );
+        }
+        async function buscarProducto() {
+
+            const token = getToken();
+
+            const key =
+                document.getElementById(
+                    "buscarKey"
+                ).value;
+
+            const response = await fetch(
+                `${API_URL}/products/${key}`,
+                {
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                }
+            );
+
+            const data = await response.json();
+
+            document.getElementById("resultado")
+                .textContent = JSON.stringify(
+                    data,
+                    null,
+                    4
+                );
+        }
+    </script>
+
+</body>
+
+</html>
